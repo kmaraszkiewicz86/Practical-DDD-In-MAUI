@@ -1,5 +1,8 @@
+using ApplicationLayer.Extensions;
 using Domain.Database.Repositories;
 using FluentResults;
+using FluentValidation;
+using Models.Database;
 using SimpleCqrs;
 
 namespace ApplicationLayer.Commands.UpdateActivityDay;
@@ -9,20 +12,31 @@ namespace ApplicationLayer.Commands.UpdateActivityDay;
 /// </summary>
 public class UpdateActivityDayCommandHandler(
     IActivityDayRepository activityDayRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateActivityDayCommand> validator)
     : IAsyncCommandHandler<UpdateActivityDayCommand, Result>
 {
     /// <inheritdoc />
     public async Task<Result> HandleAsync(UpdateActivityDayCommand command, CancellationToken cancellationToken = default)
     {
-        var activityDay = await activityDayRepository.GetByIdAsync(command.Id);
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
 
-        if (activityDay is null)
+        if (!validationResult.IsValid)
+            return validationResult.ToResult();
+
+        var model = new UpdateActivityDayModel
         {
-            return Result.Fail($"Activity day with id '{command.Id}' was not found.");
-        }
+            Date = command.Date,
+            Name = command.Name,
+            CountryCode = command.CountryCode,
+            Completed = command.Completed
+        };
 
-        activityDayRepository.Update(activityDay, command.Date, command.LocalName, command.Name, command.CountryCode, command.Completed);
+        var result = await activityDayRepository.UpdateAsync(command.Id, model, cancellationToken);
+
+        if (result.IsFailed)
+            return result;
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();

@@ -16,11 +16,6 @@ public class ActivityDay
     public DateOnly Date { get; set; }
 
     /// <summary>
-    /// Gets or sets the local name of the holiday.
-    /// </summary>
-    public string LocalName { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the international name of the holiday.
     /// </summary>
     public string Name { get; set; } = string.Empty;

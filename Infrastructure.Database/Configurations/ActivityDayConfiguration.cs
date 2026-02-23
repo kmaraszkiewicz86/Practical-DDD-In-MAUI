@@ -22,10 +22,6 @@ public class ActivityDayConfiguration : IEntityTypeConfiguration<ActivityDay>
         builder.Property(a => a.Date)
             .IsRequired();
 
-        builder.Property(a => a.LocalName)
-            .IsRequired()
-            .HasMaxLength(256);
-
         builder.Property(a => a.Name)
             .IsRequired()
             .HasMaxLength(256);

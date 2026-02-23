@@ -19,11 +19,6 @@ public class UpdateActivityDayCommand : ICommand<Result>
     public DateOnly Date { get; set; }
 
     /// <summary>
-    /// Gets or sets the updated local name of the holiday.
-    /// </summary>
-    public string LocalName { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the updated international name of the holiday.
     /// </summary>
     public string Name { get; set; } = string.Empty;

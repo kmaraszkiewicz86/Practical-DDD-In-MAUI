@@ -1,3 +1,4 @@
+using ApplicationLayer.Extensions;
 using FluentResults;
 using FluentValidation;
 using Infrastructure.Database.DbQueries;
@@ -22,13 +23,7 @@ public class GetActivityDaysQueryHandler(
         var validationResult = await validator.ValidateAsync(query, cancellationToken);
 
         if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .Select(e => new Error(e.ErrorMessage))
-                .ToList();
-
-            return Result.Fail<List<ActivityDayDto>>(errors);
-        }
+            return validationResult.ToResult<List<ActivityDayDto>>();
 
         var result = await activityDayDbQuery.GetByCountryAsync(query.CountryCode, cancellationToken);
 

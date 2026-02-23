@@ -1,3 +1,4 @@
+using ApplicationLayer.Extensions;
 using Domain.Database.Entities;
 using Domain.Database.Repositories;
 using FluentResults;
@@ -21,18 +22,11 @@ public class AddActivityDayCommandHandler(
         var validationResult = await validator.ValidateAsync(command, cancellationToken);
 
         if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .Select(e => new Error(e.ErrorMessage))
-                .ToList();
-
-            return Result.Fail(errors);
-        }
+            return validationResult.ToResult();
 
         var activityDay = new ActivityDay
         {
             Date = command.Date,
-            LocalName = command.LocalName,
             Name = command.Name,
             CountryCode = command.CountryCode,
             Completed = command.Completed

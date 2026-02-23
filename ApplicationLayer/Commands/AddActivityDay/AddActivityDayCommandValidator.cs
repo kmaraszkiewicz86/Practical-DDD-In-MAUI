@@ -16,10 +16,6 @@ public class AddActivityDayCommandValidator : AbstractValidator<AddActivityDayCo
             .NotEmpty()
             .WithMessage("Name must not be empty.");
 
-        RuleFor(c => c.LocalName)
-            .NotEmpty()
-            .WithMessage("Local name must not be empty.");
-
         RuleFor(c => c.CountryCode)
             .NotEmpty()
             .WithMessage("Country code must not be empty.")

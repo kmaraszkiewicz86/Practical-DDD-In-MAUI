@@ -1,57 +1,83 @@
 using Domain.Database.Entities;
 using Domain.Database.Repositories;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
+using Models.Database;
 
 namespace Infrastructure.Database.Repositories;
 
 /// <summary>
 /// Implements data access operations for <see cref="ActivityDay"/> entities.
 /// </summary>
-public class ActivityDayRepository : IActivityDayRepository
+public class ActivityDayRepository(AppDbContext context) : IActivityDayRepository
 {
-    private readonly AppDbContext _context;
-
     /// <summary>
-    /// Initializes a new instance of <see cref="ActivityDayRepository"/>.
+    /// Adds the given <paramref name="activityDay"/> to the database set without saving.
     /// </summary>
-    /// <param name="context">The database context.</param>
-    public ActivityDayRepository(AppDbContext context)
-    {
-        _context = context;
-    }
-
-    /// <inheritdoc />
+    /// <param name="activityDay">The activity day to add.</param>
     public async Task AddAsync(ActivityDay activityDay)
     {
-        await _context.ActivityDays.AddAsync(activityDay);
+        await context.ActivityDays.AddAsync(activityDay);
     }
 
-    /// <inheritdoc />
-    public void Update(ActivityDay activityDay, DateOnly date, string localName, string name, string countryCode, bool completed)
+    /// <summary>
+    /// Finds the activity day by <paramref name="id"/>, applies the values from <paramref name="model"/>,
+    /// and marks the entity as modified. Returns a failed result if the entity does not exist.
+    /// </summary>
+    /// <param name="id">The identifier of the activity day to update.</param>
+    /// <param name="model">The model containing the new field values.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<Result> UpdateAsync(int id, UpdateActivityDayModel model, CancellationToken cancellationToken = default)
     {
-        activityDay.Date = date;
-        activityDay.LocalName = localName;
-        activityDay.Name = name;
-        activityDay.CountryCode = countryCode;
-        activityDay.Completed = completed;
-        _context.ActivityDays.Update(activityDay);
+        var activityDay = await context.ActivityDays.FindAsync([id], cancellationToken);
+
+        if (activityDay is null)
+        {
+            return Result.Fail($"Activity day with id '{id}' was not found.");
+        }
+
+        activityDay.Date = model.Date;
+        activityDay.Name = model.Name;
+        activityDay.CountryCode = model.CountryCode;
+        activityDay.Completed = model.Completed;
+
+        return Result.Ok();
     }
 
-    /// <inheritdoc />
-    public void Remove(ActivityDay activityDay)
+    /// <summary>
+    /// Finds the activity day by <paramref name="id"/> and marks it for deletion.
+    /// Returns a failed result if the entity does not exist.
+    /// </summary>
+    /// <param name="id">The identifier of the activity day to remove.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<Result> RemoveAsync(int id, CancellationToken cancellationToken = default)
     {
-        _context.ActivityDays.Remove(activityDay);
+        var activityDay = await context.ActivityDays.FindAsync([id], cancellationToken);
+
+        if (activityDay is null)
+        {
+            return Result.Fail($"Activity day with id '{id}' was not found.");
+        }
+
+        context.ActivityDays.Remove(activityDay);
+
+        return Result.Ok();
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns the activity day with the given <paramref name="id"/>, or <c>null</c> if not found.
+    /// </summary>
+    /// <param name="id">The identifier of the activity day.</param>
     public async Task<ActivityDay?> GetByIdAsync(int id)
     {
-        return await _context.ActivityDays.FindAsync(id);
+        return await context.ActivityDays.FindAsync(id);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns all activity days in the database.
+    /// </summary>
     public async Task<List<ActivityDay>> GetAllAsync()
     {
-        return await _context.ActivityDays.ToListAsync();
+        return await context.ActivityDays.ToListAsync();
     }
 }

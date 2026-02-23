@@ -1,3 +1,4 @@
+using ApplicationLayer.Extensions;
 using Domain.Database.Repositories;
 using FluentResults;
 using FluentValidation;
@@ -20,22 +21,13 @@ public class RemoveActivityDayCommandHandler(
         var validationResult = await validator.ValidateAsync(command, cancellationToken);
 
         if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .Select(e => new Error(e.ErrorMessage))
-                .ToList();
+            return validationResult.ToResult();
 
-            return Result.Fail(errors);
-        }
+        var result = await activityDayRepository.RemoveAsync(command.Id, cancellationToken);
 
-        var activityDay = await activityDayRepository.GetByIdAsync(command.Id);
+        if (result.IsFailed)
+            return result;
 
-        if (activityDay is null)
-        {
-            return Result.Fail($"Activity day with id '{command.Id}' was not found.");
-        }
-
-        activityDayRepository.Remove(activityDay);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();

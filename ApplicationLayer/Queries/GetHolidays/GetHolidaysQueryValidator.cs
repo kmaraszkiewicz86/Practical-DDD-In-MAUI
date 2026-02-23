@@ -17,9 +17,5 @@ public class GetHolidaysQueryValidator : AbstractValidator<GetHolidaysQuery>
             .WithMessage("Country code must not be empty.")
             .Length(2, 2)
             .WithMessage("Country code must be exactly 2 characters.");
-
-        RuleFor(q => q.Year)
-            .GreaterThan(0)
-            .WithMessage("Year must be a positive number.");
     }
 }

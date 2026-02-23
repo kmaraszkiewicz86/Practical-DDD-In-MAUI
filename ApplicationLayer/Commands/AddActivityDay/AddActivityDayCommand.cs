@@ -1,4 +1,3 @@
-using Domain.Database.Entities;
 using FluentResults;
 using SimpleCqrs;
 
@@ -13,11 +12,6 @@ public class AddActivityDayCommand : ICommand<Result>
     /// Gets or sets the date of the activity day.
     /// </summary>
     public DateOnly Date { get; set; }
-
-    /// <summary>
-    /// Gets or sets the local name of the holiday.
-    /// </summary>
-    public string LocalName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the international name of the holiday.
