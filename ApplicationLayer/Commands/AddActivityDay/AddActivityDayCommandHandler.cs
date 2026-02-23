@@ -1,6 +1,7 @@
 using Domain.Database.Entities;
 using Domain.Database.Repositories;
 using FluentResults;
+using FluentValidation;
 using SimpleCqrs;
 
 namespace ApplicationLayer.Commands.AddActivityDay;
@@ -8,27 +9,26 @@ namespace ApplicationLayer.Commands.AddActivityDay;
 /// <summary>
 /// Handles the <see cref="AddActivityDayCommand"/> by persisting a new activity day to the database.
 /// </summary>
-public class AddActivityDayCommandHandler : IAsyncCommandHandler<AddActivityDayCommand, Result>
+public class AddActivityDayCommandHandler(
+    IActivityDayRepository activityDayRepository,
+    IUnitOfWork unitOfWork,
+    IValidator<AddActivityDayCommand> validator)
+    : IAsyncCommandHandler<AddActivityDayCommand, Result>
 {
-    private readonly IActivityDayRepository _activityDayRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="AddActivityDayCommandHandler"/>.
-    /// </summary>
-    /// <param name="activityDayRepository">The activity day repository.</param>
-    /// <param name="unitOfWork">The unit of work for persisting changes.</param>
-    public AddActivityDayCommandHandler(
-        IActivityDayRepository activityDayRepository,
-        IUnitOfWork unitOfWork)
-    {
-        _activityDayRepository = activityDayRepository;
-        _unitOfWork = unitOfWork;
-    }
-
     /// <inheritdoc />
     public async Task<Result> HandleAsync(AddActivityDayCommand command, CancellationToken cancellationToken = default)
     {
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .Select(e => new Error(e.ErrorMessage))
+                .ToList();
+
+            return Result.Fail(errors);
+        }
+
         var activityDay = new ActivityDay
         {
             Date = command.Date,
@@ -38,8 +38,8 @@ public class AddActivityDayCommandHandler : IAsyncCommandHandler<AddActivityDayC
             Completed = command.Completed
         };
 
-        await _activityDayRepository.AddAsync(activityDay);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await activityDayRepository.AddAsync(activityDay);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }

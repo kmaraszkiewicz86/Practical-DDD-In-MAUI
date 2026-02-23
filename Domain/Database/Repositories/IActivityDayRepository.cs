@@ -14,10 +14,15 @@ public interface IActivityDayRepository
     Task AddAsync(ActivityDay activityDay);
 
     /// <summary>
-    /// Updates an existing activity day in the repository.
+    /// Updates an existing activity day in the repository with the provided values.
     /// </summary>
-    /// <param name="activityDay">The activity day with updated values.</param>
-    void Update(ActivityDay activityDay);
+    /// <param name="activityDay">The activity day entity to update.</param>
+    /// <param name="date">The new date.</param>
+    /// <param name="localName">The new local name.</param>
+    /// <param name="name">The new international name.</param>
+    /// <param name="countryCode">The new country code.</param>
+    /// <param name="completed">The new completed flag.</param>
+    void Update(ActivityDay activityDay, DateOnly date, string localName, string name, string countryCode, bool completed);
 
     /// <summary>
     /// Removes an activity day from the repository.

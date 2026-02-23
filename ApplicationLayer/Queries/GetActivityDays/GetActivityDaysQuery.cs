@@ -10,8 +10,7 @@ namespace ApplicationLayer.Queries.GetActivityDays;
 public class GetActivityDaysQuery : IQuery<Result<List<ActivityDayDto>>>
 {
     /// <summary>
-    /// Gets or sets an optional country code filter.
-    /// When set, only activity days with the matching country code are returned.
+    /// Gets or sets the country code to filter activity days by.
     /// </summary>
-    public string? CountryCode { get; set; }
+    public string CountryCode { get; set; } = string.Empty;
 }

@@ -1,38 +1,28 @@
 using Domain.Http.Services;
 using FluentResults;
 using FluentValidation;
+using Infrastructure.Database.DbQueries;
 using Models.Http;
 using SimpleCqrs;
 
 namespace ApplicationLayer.Queries.GetHolidays;
 
 /// <summary>
-/// Handles the <see cref="GetHolidaysQuery"/> by fetching holiday data from the external API.
+/// Handles the <see cref="GetHolidaysQuery"/> by fetching holiday data from the external API
+/// and merging it with saved activity days from the database for the requested country.
 /// </summary>
-public class GetHolidaysQueryHandler : IAsyncQueryHandler<GetHolidaysQuery, Result<List<HolidayModel>>>
+public class GetHolidaysQueryHandler(
+    IHolidayHttpService holidayHttpService,
+    IActivityDayDbQuery activityDayDbQuery,
+    IValidator<GetHolidaysQuery> validator)
+    : IAsyncQueryHandler<GetHolidaysQuery, Result<List<HolidayModel>>>
 {
-    private readonly IHolidayHttpService _holidayHttpService;
-    private readonly IValidator<GetHolidaysQuery> _validator;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="GetHolidaysQueryHandler"/>.
-    /// </summary>
-    /// <param name="holidayHttpService">The holiday HTTP service.</param>
-    /// <param name="validator">The query validator.</param>
-    public GetHolidaysQueryHandler(
-        IHolidayHttpService holidayHttpService,
-        IValidator<GetHolidaysQuery> validator)
-    {
-        _holidayHttpService = holidayHttpService;
-        _validator = validator;
-    }
-
     /// <inheritdoc />
     public async Task<Result<List<HolidayModel>>> HandleAsync(
         GetHolidaysQuery query,
         CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(query, cancellationToken);
+        var validationResult = await validator.ValidateAsync(query, cancellationToken);
 
         if (!validationResult.IsValid)
         {
@@ -43,8 +33,25 @@ public class GetHolidaysQueryHandler : IAsyncQueryHandler<GetHolidaysQuery, Resu
             return Result.Fail<List<HolidayModel>>(errors);
         }
 
-        var holidays = await _holidayHttpService.GetHolidaysAsync(query.Country, query.Year, cancellationToken);
+        var holidays = await holidayHttpService.GetHolidaysAsync(query.Country, query.Year, cancellationToken);
 
-        return Result.Ok(holidays);
+        var dbActivityDays = await activityDayDbQuery.GetByCountryAsync(query.Country, cancellationToken);
+
+        var dbHolidays = dbActivityDays
+            .Where(a => a.Date.Year == query.Year)
+            .Select(a => new HolidayModel
+        {
+            Date = a.Date.ToString("yyyy-MM-dd"),
+            LocalName = a.LocalName,
+            Name = a.Name,
+            CountryCode = a.CountryCode
+        });
+
+        var merged = holidays
+            .Concat(dbHolidays)
+            .DistinctBy(h => h.Date)
+            .ToList();
+
+        return Result.Ok(merged);
     }
 }

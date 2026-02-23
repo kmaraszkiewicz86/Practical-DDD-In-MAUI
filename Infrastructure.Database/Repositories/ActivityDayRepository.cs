@@ -27,8 +27,13 @@ public class ActivityDayRepository : IActivityDayRepository
     }
 
     /// <inheritdoc />
-    public void Update(ActivityDay activityDay)
+    public void Update(ActivityDay activityDay, DateOnly date, string localName, string name, string countryCode, bool completed)
     {
+        activityDay.Date = date;
+        activityDay.LocalName = localName;
+        activityDay.Name = name;
+        activityDay.CountryCode = countryCode;
+        activityDay.Completed = completed;
         _context.ActivityDays.Update(activityDay);
     }
 

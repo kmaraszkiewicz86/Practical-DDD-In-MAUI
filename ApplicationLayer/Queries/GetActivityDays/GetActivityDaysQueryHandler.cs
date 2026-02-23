@@ -1,4 +1,5 @@
 using FluentResults;
+using FluentValidation;
 using Infrastructure.Database.DbQueries;
 using Models.Database;
 using SimpleCqrs;
@@ -8,34 +9,28 @@ namespace ApplicationLayer.Queries.GetActivityDays;
 /// <summary>
 /// Handles the <see cref="GetActivityDaysQuery"/> by fetching activity days from the database.
 /// </summary>
-public class GetActivityDaysQueryHandler : IAsyncQueryHandler<GetActivityDaysQuery, Result<List<ActivityDayDto>>>
+public class GetActivityDaysQueryHandler(
+    IActivityDayDbQuery activityDayDbQuery,
+    IValidator<GetActivityDaysQuery> validator)
+    : IAsyncQueryHandler<GetActivityDaysQuery, Result<List<ActivityDayDto>>>
 {
-    private readonly IActivityDayDbQuery _activityDayDbQuery;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="GetActivityDaysQueryHandler"/>.
-    /// </summary>
-    /// <param name="activityDayDbQuery">The activity day database query service.</param>
-    public GetActivityDaysQueryHandler(IActivityDayDbQuery activityDayDbQuery)
-    {
-        _activityDayDbQuery = activityDayDbQuery;
-    }
-
     /// <inheritdoc />
     public async Task<Result<List<ActivityDayDto>>> HandleAsync(
         GetActivityDaysQuery query,
         CancellationToken cancellationToken = default)
     {
-        List<ActivityDayDto> result;
+        var validationResult = await validator.ValidateAsync(query, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(query.CountryCode))
+        if (!validationResult.IsValid)
         {
-            result = await _activityDayDbQuery.GetByCountryAsync(query.CountryCode, cancellationToken);
+            var errors = validationResult.Errors
+                .Select(e => new Error(e.ErrorMessage))
+                .ToList();
+
+            return Result.Fail<List<ActivityDayDto>>(errors);
         }
-        else
-        {
-            result = await _activityDayDbQuery.GetAllAsync(cancellationToken);
-        }
+
+        var result = await activityDayDbQuery.GetByCountryAsync(query.CountryCode, cancellationToken);
 
         return Result.Ok(result);
     }
