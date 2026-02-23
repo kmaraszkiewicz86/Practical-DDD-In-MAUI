@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="ApplicationLayer/ApplicationLayer.csproj" />
+  <Project Path="Configuration/Configuration.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure.Database/Infrastructure.Database.csproj" />
+  <Project Path="Infrastructure.Http/Infrastructure.Http.csproj" />
+  <Project Path="Models/Models.csproj" />
+</Solution>
